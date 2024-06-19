@@ -38,6 +38,8 @@ def train_one_epoch(
         cur_preds = decoder_model(cur_codes) # reconstruct input image
         
         data_loss = data_loss_func(cur_preds, targets) 
+
+        # loss for contraints in the latent space
         code_loss = 0
         if code_loss_func:
             code_loss = code_loss_func(cur_codes)
