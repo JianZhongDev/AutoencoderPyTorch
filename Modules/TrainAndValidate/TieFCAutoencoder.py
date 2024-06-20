@@ -38,7 +38,7 @@ def tie_weight_sym_fc_autoencoder(
 ):
     # get all the fully connected layers
     encoder_fc_layers = [{"indexing_str": cur_layerstr, "module": cur_module} for cur_layerstr, cur_module in encoder_model.named_modules() if isinstance(cur_module, nn.Linear)]
-    decoder_fc_layers = [{"indexing_str": cur_layerstr, "module": cur_module}for cur_layerstr, cur_module in decoder_model.named_modules() if isinstance(cur_module, nn.Linear)]
+    decoder_fc_layers = [{"indexing_str": cur_layerstr, "module": cur_module} for cur_layerstr, cur_module in decoder_model.named_modules() if isinstance(cur_module, nn.Linear)]
 
     # validate if the autoencoder model are symmetric
     assert len(encoder_fc_layers) == len(decoder_fc_layers)
@@ -52,9 +52,23 @@ def tie_weight_sym_fc_autoencoder(
         # create tied linear module
         cur_tied_decoder_layermodule = WeightTiedLinear(cur_decoder_layer["module"], cur_encoder_layer["module"])
 
-        # update the corresponding 
-        cur_decoder_indexing_substrs = cur_encoder_layer["indexing_str"].split('.')
-        decoder_model.get_submodule(".".join(cur_decoder_indexing_substrs[:-1]))[int(cur_decoder_indexing_substrs[-1])] = cur_tied_decoder_layermodule
+        # update the corresponding layers
+        cur_decoder_indexing_substrs = cur_decoder_layer["indexing_str"].split('.')
+        cur_nof_substrs = len(cur_decoder_indexing_substrs)
+
+        cur_substr_slow_idx = 0
+        cur_substr_fast_idx = 0
+
+        # iterative access corresponding layers
+        cur_model = decoder_model
+        while(cur_substr_fast_idx < cur_nof_substrs):
+            if cur_decoder_indexing_substrs[cur_substr_fast_idx].isdigit():
+                if cur_substr_fast_idx == cur_nof_substrs - 1:
+                    cur_model.get_submodule(".".join(cur_decoder_indexing_substrs[cur_substr_slow_idx:cur_substr_fast_idx]))[int(cur_decoder_indexing_substrs[cur_substr_fast_idx])] = cur_tied_decoder_layermodule
+                else:
+                    cur_model = cur_model.get_submodule(".".join(cur_decoder_indexing_substrs[cur_substr_slow_idx:cur_substr_fast_idx]))[int(cur_decoder_indexing_substrs[cur_substr_fast_idx])]
+                cur_substr_slow_idx = cur_substr_fast_idx + 1
+            cur_substr_fast_idx += 1                             
 
     return encoder_model, decoder_model
 
@@ -85,8 +99,22 @@ def untie_weight_fc_models(
         cur_untied_module.weight = nn.Parameter(cur_layer["module"].weight.clone())
         cur_untied_module.bias = nn.Parameter(cur_layer["module"].bias.clone())
 
-        # update corresponding layers in the model
+        # update the corresponding layers
         cur_indexing_substrs = cur_layer["indexing_str"].split('.')
-        model.get_submodule(".".join(cur_indexing_substrs[:-1]))[int(cur_indexing_substrs[-1])] = cur_untied_module
-    
+        cur_nof_substrs = len(cur_indexing_substrs)
+
+        cur_substr_slow_idx = 0
+        cur_substr_fast_idx = 0
+
+        # iterative access corresponding layers
+        cur_model = model
+        while(cur_substr_fast_idx < cur_nof_substrs):
+            if cur_indexing_substrs[cur_substr_fast_idx].isdigit():
+                if cur_substr_fast_idx == cur_nof_substrs - 1:
+                    cur_model.get_submodule(".".join(cur_indexing_substrs[cur_substr_slow_idx:cur_substr_fast_idx]))[int(cur_indexing_substrs[cur_substr_fast_idx])] = cur_untied_module
+                else:
+                    cur_model = cur_model.get_submodule(".".join(cur_indexing_substrs[cur_substr_slow_idx:cur_substr_fast_idx]))[int(cur_indexing_substrs[cur_substr_fast_idx])]
+                cur_substr_slow_idx = cur_substr_fast_idx + 1
+            cur_substr_fast_idx += 1 
+
     return model
