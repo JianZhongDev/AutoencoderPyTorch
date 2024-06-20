@@ -35,6 +35,7 @@ class WeightTiedLinear(nn.Module):
 def tie_weight_sym_fc_autoencoder(
         encoder_model: nn.Module,
         decoder_model: nn.Module,
+        skip_no_grad_layer = False,
 ):
     # get all the fully connected layers
     encoder_fc_layers = [{"indexing_str": cur_layerstr, "module": cur_module} for cur_layerstr, cur_module in encoder_model.named_modules() if isinstance(cur_module, nn.Linear)]
@@ -48,6 +49,13 @@ def tie_weight_sym_fc_autoencoder(
     for i_layer in range(nof_fc_layers):
         cur_encoder_layer = encoder_fc_layers[i_layer]
         cur_decoder_layer = decoder_fc_layers[nof_fc_layers - 1 - i_layer]
+
+        # skip freezed (no grad) layers if needed
+        if skip_no_grad_layer:
+            if not cur_decoder_layer["module"].weight.requires_grad:
+                continue
+            if not cur_decoder_layer["module"].weight.requires_grad:
+                continue
 
         # create tied linear module
         cur_tied_decoder_layermodule = WeightTiedLinear(cur_decoder_layer["module"], cur_encoder_layer["module"])
