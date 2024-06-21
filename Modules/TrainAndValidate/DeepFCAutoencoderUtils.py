@@ -25,7 +25,7 @@ def update_corresponding_layers(
     dst_layer_refs,
 ):
     nof_src_layers = len(src_layer_refs)
-    nof_dst_layers = len(dst_layer_refs)s
+    nof_dst_layers = len(dst_layer_refs)
 
     nof_itr_layers = min(len(nof_src_layers), len(nof_dst_layers))
     for i_layer in nof_itr_layers:
