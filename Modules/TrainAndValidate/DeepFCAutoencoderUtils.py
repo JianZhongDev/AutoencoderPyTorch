@@ -14,7 +14,8 @@ def get_layer_refs(
     layer_class,
 ):
     # get all the fully connected layers
-    layers = [{"indexing_str": cur_layerstr, "module": cur_module} for cur_layerstr, cur_module in model.named_modules() if isinstance(cur_module, layer_class)]
+    # layers = [{"indexing_str": cur_layerstr, "module": cur_module} for cur_layerstr, cur_module in model.named_modules() if isinstance(cur_module, layer_class)]
+    layers = [{"indexing_str": cur_layerstr, "module": cur_module} for cur_layerstr, cur_module in model.named_modules() if type(cur_module).__name__ == layer_class.__name__]
 
     return layers
 
@@ -27,8 +28,8 @@ def update_corresponding_layers(
     nof_src_layers = len(src_layer_refs)
     nof_dst_layers = len(dst_layer_refs)
 
-    nof_itr_layers = min(len(nof_src_layers), len(nof_dst_layers))
-    for i_layer in nof_itr_layers:
+    nof_itr_layers = min(nof_src_layers, nof_dst_layers)
+    for i_layer in range(nof_itr_layers):
         cur_src_module = src_layer_refs[i_layer]["module"]
         cur_dst_module = dst_layer_refs[i_layer]["module"]
         cur_dst_module.load_state_dict(cur_src_module.state_dict())
@@ -41,7 +42,7 @@ def freeze_layers(
     layer_refs,
 ):
     for cur_layer in layer_refs:
-        for param in cur_layer.parameters():
+        for param in cur_layer["module"].parameters():
             param.requires_grad = False
 
     return layer_refs
@@ -52,7 +53,7 @@ def unfreeze_layers(
     layer_refs,    
 ):
     for cur_layer in layer_refs:
-        for param in cur_layer.parameters():
+        for param in cur_layer["module"].parameters():
             param.requires_grad = True
 
     return layer_refs
