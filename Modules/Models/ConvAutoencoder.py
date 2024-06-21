@@ -74,6 +74,6 @@ class SimpleFCReshapeNetwork(nn.Module):
         if len(network_layers) > 0:
             self.network = nn.Sequential(*network_layers)
 
-    def foward(self, x):
+    def forward(self, x):
         y = self.network(x)
         return y
